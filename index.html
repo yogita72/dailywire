@@ -284,7 +284,7 @@ footer{
 </footer>
 
 <script>
-const FEEDS = {
+  const FEEDS = {
   india: [
     { name: 'The Hindu', url: 'https://www.thehindu.com/news/national/feeder/default.rss' },
     { name: 'NDTV', url: 'https://feeds.feedburner.com/ndtvnews-top-stories' },
@@ -305,10 +305,12 @@ const FEEDS = {
     { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' },
     { name: 'NPR World', url: 'https://feeds.npr.org/1004/rss.xml' }
   ],
-  events: [
-    { name: 'SFist', url: 'https://sfist.com/rss' },
+  sports: [
     { name: 'ESPN Warriors', url: 'https://www.espn.com/espn/rss/nba/team?team=gs' },
     { name: 'ESPN Earthquakes', url: 'https://www.espn.com/espn/rss/soccer/team?team=usa.sj' }
+  ],
+  culture: [
+    { name: 'SFist', url: 'https://sfist.com/rss' }
   ]
 };
 
@@ -317,7 +319,7 @@ const QUICK_LINKS = [
   { name: 'South India Fine Arts (SIFA)', desc: 'Carnatic classical concerts & dance', url: 'https://www.southindiafinearts.org/upcoming-events' },
   { name: 'Sangeethaamsha', desc: 'Hindustani & Carnatic baithaks, live concerts', url: 'https://www.sangeethaamsha.com/events' },
   { name: 'Indian Classical Music & Arts Foundation (ICMA)', desc: 'Hindustani classical concerts, cross-genre collaborations', url: 'https://www.icmafoundation.org/' },
-  { name: 'San Francisco Symphony', desc: 'Western classical concerts & performances', url: 'https://www.sfsymphony.org/Buy-Tickets/2025-26-Season' },
+  { name: 'San Francisco Symphony', desc: 'Western classical concerts & performances', url: 'https://www.sfsymphony.org/' },
   { name: 'San Francisco Opera', desc: 'Opera & classical vocal performances', url: 'https://sfopera.com/whats-on/' }
 ];
 
@@ -326,7 +328,8 @@ const LABELS = {
   us: 'United States — top stories',
   bay: 'Bay Area — news & events',
   world: 'World — headlines',
-  events: 'Bay Area — sports & culture (RSS) + curated concert links'
+  sports: 'Bay Area — sports (Warriors & Earthquakes)',
+  culture: 'Bay Area — culture (SFist) + curated concert links'
 };
 
 let cache = {};
@@ -351,9 +354,7 @@ function timeAgo(dateStr){
   if(diffMin < 60) return diffMin + 'm ago';
   const diffHr = Math.floor(diffMin/60);
   if(diffHr < 24) return diffHr + 'h ago';
-  return Math.floor(diffHr/24) + 'd ago';
-}
-function parseRssXml(xmlText, sourceName){
+  return Math.floor(diffHr/24) + 'd function parseRssXml(xmlText, sourceName){
   try {
     const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
     const items = Array.from(doc.querySelectorAll('item')).slice(0, 6);
@@ -425,6 +426,7 @@ async function fetchFeed(feed){
   console.error('[DailyWire] all proxies failed for', feed.name, '—', lastError);
   return { ok: false, items: [], source: feed.name, error: lastError };
 }
+
 async function loadCategory(cat, isForeground){
   if(isForeground){
     document.getElementById('feed').innerHTML = '<div class="loading">Loading ' + cat + ' headlines…</div>';
@@ -457,7 +459,7 @@ function renderFeed(cat){
   const items = cache[cat] || [];
   const errors = errorCache[cat] || [];
   document.getElementById('section-label').textContent = LABELS[cat];
-  const links = (cat === 'events') ? quickLinksHtml() : '';
+  const links = (cat === 'culture') ? quickLinksHtml() : '';
   if(items.length === 0){
     feedEl.innerHTML = '<div class="empty">Couldn\'t load headlines right now.<br>Every source proxy failed — this is usually a temporary block on the free proxies this page relies on.<br>Try "refresh" in a minute.' +
       (errors.length ? '<div class="debug">' + errors.map(e => '• ' + e).join('<br>') + '</div>' : '') +
@@ -505,6 +507,7 @@ document.querySelectorAll('.tab').forEach(tab => {
 document.getElementById('refresh-btn').addEventListener('click', () => loadAll(true));
 
 loadAll();
+
 </script>
 
 </body>
