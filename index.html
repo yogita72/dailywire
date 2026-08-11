@@ -203,6 +203,40 @@ main{
   border-top:1px dashed var(--line);
   text-align:left;
 }
+.quicklinks{
+  margin-top:28px;
+  padding-top:20px;
+  border-top:2px solid var(--ink);
+}
+.quicklinks-label{
+  font-family:'JetBrains Mono', monospace;
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--muted);
+  margin-bottom:14px;
+}
+.quicklink{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  padding:14px 0;
+  border-bottom:1px solid var(--line);
+  text-decoration:none;
+  color:var(--ink);
+}
+.quicklink:last-child{border-bottom:none;}
+.ql-name{
+  font-family:'Archivo Expanded', sans-serif;
+  font-weight:700;
+  font-size:15.5px;
+}
+.ql-desc{
+  font-family:'Source Serif 4', serif;
+  font-size:13.5px;
+  color:var(--muted);
+}
+.quicklink:hover .ql-name{color:var(--events);}
 
 footer{
   max-width:760px;
@@ -236,7 +270,7 @@ footer{
     <div class="tab" data-cat="us"><span class="n"></span>US</div>
     <div class="tab" data-cat="bay"><span class="n"></span>Bay Area</div>
     <div class="tab" data-cat="world"><span class="n"></span>World</div>
-    <div class="tab" data-cat="events"><span class="n"></span>Events</div>
+    <div class="tab" data-cat="events"><span class="n"></span>Sports & Culture</div>
   </div>
 </header>
 
@@ -262,9 +296,9 @@ const FEEDS = {
     { name: 'CBS News', url: 'https://www.cbsnews.com/latest/rss/us' }
   ],
   bay: [
-    { name: 'SFGate', url: 'https://www.sfgate.com/bayarea/feed/Bay-Area-News-577.php' },
     { name: 'KQED', url: 'https://ww2.kqed.org/news/feed/' },
-    { name: 'SF Examiner', url: 'https://www.sfexaminer.com/news/local/feed/' }
+    { name: 'Berkeleyside', url: 'https://www.berkeleyside.org/feed' },
+    { name: 'SF Standard', url: 'https://sfstandard.com/feed/' }
   ],
   world: [
     { name: 'BBC World', url: 'http://feeds.bbci.co.uk/news/world/rss.xml' },
@@ -272,23 +306,33 @@ const FEEDS = {
     { name: 'NPR World', url: 'https://feeds.npr.org/1004/rss.xml' }
   ],
   events: [
-    { name: 'Funcheap SF', url: 'https://sf.funcheap.com/feed/' },
-    { name: 'SF Station', url: 'https://www.sfstation.com/feed' },
-    { name: '48 Hills', url: 'https://48hills.org/feed/' }
+    { name: 'SFist', url: 'https://sfist.com/rss' },
+    { name: 'ESPN Warriors', url: 'https://www.espn.com/espn/rss/nba/team?team=gs' },
+    { name: 'ESPN Earthquakes', url: 'https://www.espn.com/espn/rss/soccer/team?team=usa.sj' }
   ]
 };
+
+const QUICK_LINKS = [
+  { name: 'Sulekha Events — Bay Area', desc: 'Indian concerts, Bollywood, classical & dance listings', url: 'https://events.sulekha.com/bay-area' },
+  { name: 'South India Fine Arts (SIFA)', desc: 'Carnatic classical concerts & dance', url: 'https://www.southindiafinearts.org/upcoming-events' },
+  { name: 'Sangeethaamsha', desc: 'Hindustani & Carnatic baithaks, live concerts', url: 'https://www.sangeethaamsha.com/events' },
+  { name: 'Indian Classical Music & Arts Foundation (ICMA)', desc: 'Hindustani classical concerts, cross-genre collaborations', url: 'https://www.icmafoundation.org/' },
+  { name: 'San Francisco Symphony', desc: 'Western classical concerts & performances', url: 'https://www.sfsymphony.org/Buy-Tickets/2025-26-Season' },
+  { name: 'San Francisco Opera', desc: 'Opera & classical vocal performances', url: 'https://sfopera.com/whats-on/' }
+];
 
 const LABELS = {
   india: 'India — top stories',
   us: 'United States — top stories',
   bay: 'Bay Area — news & events',
   world: 'World — headlines',
-  events: 'Bay Area — upcoming events'
+  events: 'Bay Area — sports & culture (RSS) + curated concert links'
 };
 
 let cache = {};
 let errorCache = {};
 let currentTab = 'india';
+
 function stripHtml(html){
   const tmp = document.createElement('div');
   tmp.innerHTML = html || '';
@@ -309,7 +353,6 @@ function timeAgo(dateStr){
   if(diffHr < 24) return diffHr + 'h ago';
   return Math.floor(diffHr/24) + 'd ago';
 }
-
 function parseRssXml(xmlText, sourceName){
   try {
     const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
@@ -382,7 +425,6 @@ async function fetchFeed(feed){
   console.error('[DailyWire] all proxies failed for', feed.name, '—', lastError);
   return { ok: false, items: [], source: feed.name, error: lastError };
 }
-
 async function loadCategory(cat, isForeground){
   if(isForeground){
     document.getElementById('feed').innerHTML = '<div class="loading">Loading ' + cat + ' headlines…</div>';
@@ -396,15 +438,30 @@ async function loadCategory(cat, isForeground){
   if(cat === currentTab) renderFeed(cat);
 }
 
+function quickLinksHtml(){
+  return `
+    <div class="quicklinks">
+      <div class="quicklinks-label">Curated — check directly (no live feed available)</div>
+      ${QUICK_LINKS.map(l => `
+        <a class="quicklink" href="${l.url}" target="_blank" rel="noopener">
+          <span class="ql-name">${l.name}</span>
+          <span class="ql-desc">${l.desc}</span>
+        </a>
+      `).join('')}
+    </div>
+  `;
+}
+
 function renderFeed(cat){
   const feedEl = document.getElementById('feed');
   const items = cache[cat] || [];
   const errors = errorCache[cat] || [];
   document.getElementById('section-label').textContent = LABELS[cat];
+  const links = (cat === 'events') ? quickLinksHtml() : '';
   if(items.length === 0){
     feedEl.innerHTML = '<div class="empty">Couldn\'t load headlines right now.<br>Every source proxy failed — this is usually a temporary block on the free proxies this page relies on.<br>Try "refresh" in a minute.' +
       (errors.length ? '<div class="debug">' + errors.map(e => '• ' + e).join('<br>') + '</div>' : '') +
-      '</div>';
+      '</div>' + links;
     return;
   }
   let html = items.map(item => `
@@ -417,6 +474,7 @@ function renderFeed(cat){
   if(errors.length){
     html += '<div class="debug partial">Some sources didn\'t load: ' + errors.map(e => e.split(':')[0]).join(', ') + '</div>';
   }
+  html += links;
   feedEl.innerHTML = html;
 }
 
