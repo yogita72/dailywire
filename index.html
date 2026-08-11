@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Wire — News Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root{
+  --ink:#1B1D22;
+  --paper:#F7F5F0;
+  --paper-dim:#EDEAE2;
+  --line:#D8D3C7;
+  --india:#C9701E;
+  --us:#3E5C76;
+  --bay:#3F7A6E;
+  --world:#6B6560;
+  --events:#9C5FA8;
+  --muted:#6B665F;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Source Serif 4', serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+header{
+  border-bottom:2px solid var(--ink);
+  padding:22px 24px 16px;
+  position:sticky;
+  top:0;
+  background:var(--paper);
+  z-index:50;
+}
+.masthead{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.title{
+  font-family:'Archivo Expanded', sans-serif;
+  font-weight:800;
+  font-size:clamp(28px, 5vw, 40px);
+  letter-spacing:-0.01em;
+  text-transform:uppercase;
+  line-height:0.95;
+}
+.title span{color:var(--india);}
+.status-line{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  color:var(--muted);
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--bay);
+  display:inline-block;
+  animation:pulse 2.2s infinite;
+}
+@keyframes pulse{
+  0%,100%{opacity:1;}
+  50%{opacity:0.3;}
+}
+#refresh-btn{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  background:none;
+  border:1px solid var(--ink);
+  color:var(--ink);
+  padding:5px 10px;
+  cursor:pointer;
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+}
+#refresh-btn:hover{background:var(--ink);color:var(--paper);}
+#refresh-btn:disabled{opacity:0.4;cursor:default;}
+
+.tabs{
+  display:flex;
+  gap:0;
+  margin-top:16px;
+  border-top:1px solid var(--line);
+  flex-wrap:wrap;
+}
+.tab{
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  padding:11px 16px;
+  cursor:pointer;
+  color:var(--muted);
+  border-right:1px solid var(--line);
+  background:var(--paper-dim);
+  user-select:none;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  white-space:nowrap;
+}
+.tab .n{
+  width:6px;height:6px;
+  display:inline-block;
+}
+.tab[data-cat="india"] .n{background:var(--india);}
+.tab[data-cat="us"] .n{background:var(--us);}
+.tab[data-cat="bay"] .n{background:var(--bay);}
+.tab[data-cat="world"] .n{background:var(--world);}
+.tab[data-cat="events"] .n{background:var(--events);}
+.tab.active{
+  background:var(--ink);
+  color:var(--paper);
+}
+.tab.active .n{background:var(--paper) !important;}
+.tab:hover:not(.active){background:var(--line);}
+
+main{
+  max-width:760px;
+  margin:0 auto;
+  padding:28px 24px 100px;
+}
+.section-label{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--muted);
+  margin-bottom:18px;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--line);
+}
+.item{
+  padding:20px 0;
+  border-bottom:1px solid var(--line);
+}
+.item:first-child{padding-top:0;}
+.item-meta{
+  font-family:'JetBrains Mono', monospace;
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  color:var(--muted);
+  margin-bottom:6px;
+  display:flex;
+  gap:10px;
+}
+.item-headline{
+  font-family:'Archivo Expanded', sans-serif;
+  font-weight:700;
+  font-size:19px;
+  line-height:1.25;
+  margin:0 0 8px;
+  letter-spacing:-0.003em;
+}
+.item-headline a{
+  color:var(--ink);
+  text-decoration:none;
+  background-image:linear-gradient(var(--ink), var(--ink));
+  background-repeat:no-repeat;
+  background-size:0% 1px;
+  background-position:0 100%;
+  transition:background-size 0.2s;
+}
+.item-headline a:hover{background-size:100% 1px;}
+.item-summary{
+  font-size:15px;
+  line-height:1.55;
+  color:#3a3833;
+  margin:0;
+}
+.loading, .empty{
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  color:var(--muted);
+  padding:40px 0;
+  text-align:center;
+}
+.err{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  color:var(--india);
+  padding:10px 0;
+}
+.debug{
+  margin-top:16px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:10.5px;
+  color:var(--muted);
+  text-align:left;
+  line-height:1.7;
+}
+.debug.partial{
+  padding:14px 0 0;
+  border-top:1px dashed var(--line);
+  text-align:left;
+}
+
+footer{
+  max-width:760px;
+  margin:0 auto;
+  padding:20px 24px 40px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:10.5px;
+  color:var(--muted);
+  border-top:1px solid var(--line);
+}
+
+@media(max-width:600px){
+  .item-headline{font-size:17px;}
+  .tab{padding:10px 12px;font-size:11px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="masthead">
+    <div class="title">Daily<span>Wire</span></div>
+    <div class="status-line">
+      <span class="dot"></span>
+      <span id="sync-status">syncing…</span>
+      <button id="refresh-btn">refresh</button>
+    </div>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-cat="india"><span class="n"></span>India</div>
+    <div class="tab" data-cat="us"><span class="n"></span>US</div>
+    <div class="tab" data-cat="bay"><span class="n"></span>Bay Area</div>
+    <div class="tab" data-cat="world"><span class="n"></span>World</div>
+    <div class="tab" data-cat="events"><span class="n"></span>Events</div>
+  </div>
+</header>
+
+<main>
+  <div class="section-label" id="section-label">India — top stories</div>
+  <div id="feed"><div class="loading">Loading headlines…</div></div>
+</main>
+
+<footer>
+  Sources fetched live via public RSS feeds. Headlines and summaries belong to their original publishers — click through to read full articles. This page pulls fresh content each time it loads; nothing is stored.
+</footer>
+
+<script>
+const FEEDS = {
+  india: [
+    { name: 'The Hindu', url: 'https://www.thehindu.com/news/national/feeder/default.rss' },
+    { name: 'NDTV', url: 'https://feeds.feedburner.com/ndtvnews-top-stories' },
+    { name: 'Hindustan Times', url: 'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml' }
+  ],
+  us: [
+    { name: 'NPR', url: 'https://feeds.npr.org/1003/rss.xml' },
+    { name: 'ABC News', url: 'https://abcnews.go.com/abcnews/usheadlines' },
+    { name: 'CBS News', url: 'https://www.cbsnews.com/latest/rss/us' }
+  ],
+  bay: [
+    { name: 'SFGate', url: 'https://www.sfgate.com/bayarea/feed/Bay-Area-News-577.php' },
+    { name: 'KQED', url: 'https://ww2.kqed.org/news/feed/' },
+    { name: 'SF Examiner', url: 'https://www.sfexaminer.com/news/local/feed/' }
+  ],
+  world: [
+    { name: 'BBC World', url: 'http://feeds.bbci.co.uk/news/world/rss.xml' },
+    { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' },
+    { name: 'NPR World', url: 'https://feeds.npr.org/1004/rss.xml' }
+  ],
+  events: [
+    { name: 'Funcheap SF', url: 'https://sf.funcheap.com/feed/' },
+    { name: 'SF Station', url: 'https://www.sfstation.com/feed' },
+    { name: '48 Hills', url: 'https://48hills.org/feed/' }
+  ]
+};
+
+const LABELS = {
+  india: 'India — top stories',
+  us: 'United States — top stories',
+  bay: 'Bay Area — news & events',
+  world: 'World — headlines',
+  events: 'Bay Area — upcoming events'
+};
+
+let cache = {};
+let errorCache = {};
+let currentTab = 'india';
+function stripHtml(html){
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html || '';
+  return (tmp.textContent || tmp.innerText || '').trim();
+}
+
+function truncate(text, max){
+  if(text.length <= max) return text;
+  return text.slice(0, max).replace(/\s+\S*$/, '') + '…';
+}
+
+function timeAgo(dateStr){
+  const d = new Date(dateStr);
+  if(isNaN(d)) return '';
+  const diffMin = Math.floor((Date.now() - d.getTime()) / 60000);
+  if(diffMin < 60) return diffMin + 'm ago';
+  const diffHr = Math.floor(diffMin/60);
+  if(diffHr < 24) return diffHr + 'h ago';
+  return Math.floor(diffHr/24) + 'd ago';
+}
+
+function parseRssXml(xmlText, sourceName){
+  try {
+    const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
+    const items = Array.from(doc.querySelectorAll('item')).slice(0, 6);
+    if(items.length === 0){
+      const entries = Array.from(doc.querySelectorAll('entry')).slice(0, 6);
+      return entries.map(entry => ({
+        source: sourceName,
+        title: stripHtml(entry.querySelector('title')?.textContent || ''),
+        summary: truncate(stripHtml(entry.querySelector('summary')?.textContent || entry.querySelector('content')?.textContent || ''), 180),
+        link: entry.querySelector('link')?.getAttribute('href') || entry.querySelector('link')?.textContent || '',
+        date: entry.querySelector('updated')?.textContent || entry.querySelector('published')?.textContent || ''
+      }));
+    }
+    return items.map(item => ({
+      source: sourceName,
+      title: stripHtml(item.querySelector('title')?.textContent || ''),
+      summary: truncate(stripHtml(item.querySelector('description')?.textContent || ''), 180),
+      link: item.querySelector('link')?.textContent || '',
+      date: item.querySelector('pubDate')?.textContent || ''
+    }));
+  } catch(e){
+    return [];
+  }
+}
+
+async function fetchFeed(feed){
+  const proxies = [
+    { kind: 'json', url: 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feed.url) },
+    { kind: 'xml', url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent(feed.url) },
+    { kind: 'xml', url: 'https://corsproxy.io/?url=' + encodeURIComponent(feed.url) }
+  ];
+
+  let lastError = 'unknown error';
+
+  for(const proxy of proxies){
+    try {
+      const res = await fetch(proxy.url);
+      if(!res.ok){
+        lastError = 'HTTP ' + res.status + ' from ' + proxy.url.split('/')[2];
+        throw new Error(lastError);
+      }
+
+      if(proxy.kind === 'json'){
+        const data = await res.json();
+        if(data.status === 'ok' && data.items && data.items.length){
+          return { ok: true, items: data.items.slice(0, 6).map(item => ({
+            source: feed.name,
+            title: stripHtml(item.title),
+            summary: truncate(stripHtml(item.description || item.content || ''), 180),
+            link: item.link,
+            date: item.pubDate
+          }))};
+        }
+        lastError = 'rss2json returned no items (status: ' + data.status + ')';
+        throw new Error(lastError);
+      } else {
+        const xmlText = await res.text();
+        const parsed = parseRssXml(xmlText, feed.name);
+        if(parsed.length) return { ok: true, items: parsed };
+        lastError = 'proxy returned unparseable/empty XML';
+        throw new Error(lastError);
+      }
+    } catch(e){
+      lastError = e.message || String(e);
+      console.warn('[DailyWire]', feed.name, '×', proxy.url.split('/')[2], '—', lastError);
+      continue;
+    }
+  }
+  console.error('[DailyWire] all proxies failed for', feed.name, '—', lastError);
+  return { ok: false, items: [], source: feed.name, error: lastError };
+}
+
+async function loadCategory(cat, isForeground){
+  if(isForeground){
+    document.getElementById('feed').innerHTML = '<div class="loading">Loading ' + cat + ' headlines…</div>';
+  }
+  const results = await Promise.all(FEEDS[cat].map(fetchFeed));
+  let items = results.filter(r => r.ok).flatMap(r => r.items);
+  let errors = results.filter(r => !r.ok).map(r => r.source + ': ' + r.error);
+  items.sort((a,b) => new Date(b.date) - new Date(a.date));
+  cache[cat] = items;
+  errorCache[cat] = errors;
+  if(cat === currentTab) renderFeed(cat);
+}
+
+function renderFeed(cat){
+  const feedEl = document.getElementById('feed');
+  const items = cache[cat] || [];
+  const errors = errorCache[cat] || [];
+  document.getElementById('section-label').textContent = LABELS[cat];
+  if(items.length === 0){
+    feedEl.innerHTML = '<div class="empty">Couldn\'t load headlines right now.<br>Every source proxy failed — this is usually a temporary block on the free proxies this page relies on.<br>Try "refresh" in a minute.' +
+      (errors.length ? '<div class="debug">' + errors.map(e => '• ' + e).join('<br>') + '</div>' : '') +
+      '</div>';
+    return;
+  }
+  let html = items.map(item => `
+    <div class="item">
+      <div class="item-meta"><span>${item.source}</span>${item.date ? '<span>' + timeAgo(item.date) + '</span>' : ''}</div>
+      <h2 class="item-headline"><a href="${item.link}" target="_blank" rel="noopener">${item.title}</a></h2>
+      <p class="item-summary">${item.summary}</p>
+    </div>
+  `).join('');
+  if(errors.length){
+    html += '<div class="debug partial">Some sources didn\'t load: ' + errors.map(e => e.split(':')[0]).join(', ') + '</div>';
+  }
+  feedEl.innerHTML = html;
+}
+
+async function loadAll(refresh=false){
+  document.getElementById('refresh-btn').disabled = true;
+  document.getElementById('sync-status').textContent = 'syncing…';
+  await loadCategory(currentTab, true);
+  Object.keys(FEEDS).filter(c => c !== currentTab).forEach(c => {
+    if(refresh || !cache[c]) loadCategory(c, false).catch(()=>{});
+  });
+  document.getElementById('sync-status').textContent = 'synced ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  document.getElementById('refresh-btn').disabled = false;
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentTab = tab.dataset.cat;
+    if(cache[currentTab]){
+      renderFeed(currentTab);
+    } else {
+      loadCategory(currentTab, true);
+    }
+  });
+});
+
+document.getElementById('refresh-btn').addEventListener('click', () => loadAll(true));
+
+loadAll();
+</script>
+
+</body>
+</html>
