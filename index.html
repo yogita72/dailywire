@@ -6,7 +6,6 @@
 <title>Daily Wire — News Dashboard</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap');
-
 :root{
   --ink:#1B1D22;
   --paper:#F7F5F0;
@@ -115,7 +114,8 @@ header{
 .tab[data-cat="us"] .n{background:var(--us);}
 .tab[data-cat="bay"] .n{background:var(--bay);}
 .tab[data-cat="world"] .n{background:var(--world);}
-.tab[data-cat="events"] .n{background:var(--events);}
+.tab[data-cat="sports"] .n{background:var(--events);}
+.tab[data-cat="culture"] .n{background:var(--events);}
 .tab.active{
   background:var(--ink);
   color:var(--paper);
@@ -270,7 +270,8 @@ footer{
     <div class="tab" data-cat="us"><span class="n"></span>US</div>
     <div class="tab" data-cat="bay"><span class="n"></span>Bay Area</div>
     <div class="tab" data-cat="world"><span class="n"></span>World</div>
-    <div class="tab" data-cat="events"><span class="n"></span>Sports & Culture</div>
+    <div class="tab" data-cat="sports"><span class="n"></span>Sports</div>
+    <div class="tab" data-cat="culture"><span class="n"></span>Culture</div>
   </div>
 </header>
 
@@ -284,7 +285,7 @@ footer{
 </footer>
 
 <script>
-  const FEEDS = {
+const FEEDS = {
   india: [
     { name: 'The Hindu', url: 'https://www.thehindu.com/news/national/feeder/default.rss' },
     { name: 'NDTV', url: 'https://feeds.feedburner.com/ndtvnews-top-stories' },
@@ -354,7 +355,10 @@ function timeAgo(dateStr){
   if(diffMin < 60) return diffMin + 'm ago';
   const diffHr = Math.floor(diffMin/60);
   if(diffHr < 24) return diffHr + 'h ago';
-  return Math.floor(diffHr/24) + 'd function parseRssXml(xmlText, sourceName){
+  return Math.floor(diffHr/24) + 'd ago';
+}
+
+function parseRssXml(xmlText, sourceName){
   try {
     const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
     const items = Array.from(doc.querySelectorAll('item')).slice(0, 6);
@@ -507,7 +511,6 @@ document.querySelectorAll('.tab').forEach(tab => {
 document.getElementById('refresh-btn').addEventListener('click', () => loadAll(true));
 
 loadAll();
-
 </script>
 
 </body>
